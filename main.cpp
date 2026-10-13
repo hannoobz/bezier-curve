@@ -1,9 +1,10 @@
 #include "iostream"
-#include <ostream>
-#include <string>
-#include <vector>
+#include "ostream"
+#include "string"
+#include "vector"
 #include "functional"
 #include "raylib.h"
+#include "string"
 
 typedef struct Point {
     float x;
@@ -51,7 +52,15 @@ void renderTSegment(const std::vector<std::vector<Curve>>& curve, float t, float
             Point p0 = curve[depth][i](t);
             Point p1 = curve[depth][i](t+increment);
             if(depth==curve.size()-1){
-                DrawLineV({.x=p0.x,.y=p0.y}, {.x=p1.x,.y=p1.y}, PINK);
+                DrawLineEx(
+                    { .x = p0.x, .y = p0.y },
+                    { .x = p1.x, .y = p1.y },
+                    1.5f,
+                    Color{244, 219, 214, 255}
+                );
+            }
+            else{
+                DrawCircleV({.x=p0.x,.y=p0.y}, 0.75f ,Color{166, 218, 149,255});
             }
         }
     }
@@ -61,7 +70,9 @@ void renderPoint(const std::vector<std::vector<Curve>>& curve, float t) {
     for (size_t depth = 0; depth < curve.size(); ++depth) {
         for (size_t i = 0; i < curve[depth].size(); ++i) {
             Point p0 = curve[depth][i](t);
-                DrawCircleV({.x=p0.x,.y=p0.y},7.5f ,MAGENTA);
+            std::string text = std::to_string(i) + " (" + std::to_string(static_cast<int>(p0.x)) + "," + std::to_string(static_cast<int>(p0.y)) + ")\n";
+                DrawCircleV({.x=p0.x,.y=p0.y},7.5f ,Color{237, 135, 150,255});
+                DrawText(text.data(), p0.x+7, p0.y+7, 24, Color{202, 211, 245,255});
         }
     }
 }
@@ -96,26 +107,29 @@ void movePoint(std::vector<std::vector<Curve>>& vec, int index, const Point& p){
     }
 }
 
-// void testIteratePoint(int depth,int index){
-//     for(int i=0;i<depth;i++){
-//         for(int j=index-i-1;j<index+1; j++){
-//             if(j>=0 && j<depth-i-1){
-//                 std::cout << j << " " ;
-//             }
-//         }
-//         std::cout << std::endl;
-//     }
-// }
 
+void deleteLast(std::vector<std::vector<Curve>>& vec){
+    int depth = vec.size();
+    for(int i=0;i<depth;i++){
+        vec[i].pop_back();
+        if(i==depth-1){
+            vec.pop_back();
+        }
+    }
+}
 
 
 int main(){
-
     std::vector<std::vector<Curve>> curve;
-    Vector2 mousepos;
-    int divider = 10;
 
-    InitWindow(800, 800,"Bezier Curve");
+    Vector2 mousepos;
+    int divider = 6;
+    int clickedIndex =-1;
+    int screenWidth = 1280;
+    int screenHeight = 720;
+
+    SetConfigFlags(FLAG_WINDOW_RESIZABLE);
+    InitWindow(screenWidth, screenHeight, "Bézier Curve");
     SetTargetFPS(60);
 
     while(!WindowShouldClose()){
@@ -128,19 +142,62 @@ int main(){
             insertPoint(curve, p);
         }
 
+        if(IsMouseButtonDown(MOUSE_LEFT_BUTTON)){
+            mousepos =  GetMousePosition();
+            float xpos;
+            float ypos;
+            if(!curve.empty() && clickedIndex==-1){
+                for(int i=0;i<curve[0].size();i++){
+                    xpos = curve[0][i](0).x;
+                    ypos = curve[0][i](0).y;
+                    bool isInside = CheckCollisionPointCircle(mousepos, {.x=xpos,.y=ypos}, 10.0f);
+                    if(isInside){
+                        clickedIndex = i;
+                        break;
+                    }
+                }
+            }
+            if(clickedIndex!=-1){
+                movePoint(curve, clickedIndex, {.x=mousepos.x,.y=mousepos.y});
+            }
+        }
+        if(IsMouseButtonUp(MOUSE_LEFT_BUTTON)){
+            clickedIndex=-1;
+        }
+
         if(IsKeyDown(KEY_UP)){
             divider += 1;
         }
         if(IsKeyDown(KEY_DOWN)){
             if(divider>1)divider -= 1;
         }
+        if(IsKeyPressed(KEY_C)){
+            curve = {};
+        }
+        if(IsKeyPressed(KEY_U)){
+            deleteLast(curve);
+        }
 
+
+        bool firstLoad = true;
         BeginDrawing();
-        ClearBackground(WHITE);
+        if(clickedIndex!=-1 || IsMouseButtonPressed(MOUSE_RIGHT_BUTTON) || firstLoad){
+        firstLoad = false;
+        ClearBackground({24, 25, 38});
+        for (int x = 0; x <= GetScreenWidth(); x += 10)
+        {
+            DrawLine(x, 0, x, GetScreenHeight(), Color{30, 32, 48,255});
+        }
+
+        for (int y = 0; y <= GetScreenHeight(); y += 10)
+        {
+            DrawLine(0, y, GetScreenWidth(), y,  Color{30, 32, 48,255});
+        }
         renderPoint(curve, 0);
         for (int i=0;i<divider;i++){
            float tval = (float)i/divider;
            renderTSegment(curve, tval, 1.0f/divider);
+        }
         }
         EndDrawing();
     }
