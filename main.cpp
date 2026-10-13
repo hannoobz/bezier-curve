@@ -3,17 +3,17 @@
 #include <string>
 #include <vector>
 #include "functional"
-// #include "raylib.h""
+#include "raylib.h"
 
 typedef struct Point {
-    double x;
-    double y;
+    float x;
+    float y;
 } Point ;
 
-using Curve = std::function<Point(double)>;
+using Curve = std::function<Point(float)>;
 
 Curve interpolate(Curve a, Curve b) {
-    return [a, b](double t) {
+    return [a, b](float t) {
         Point p1 = a(t);
         Point p2 = b(t);
 
@@ -25,13 +25,13 @@ Curve interpolate(Curve a, Curve b) {
 }
 
 Curve constant(Point p) {
-    return [p](double) {
+    return [p](float) {
         return p;
     };
 }
 
 // AI GENERATED
-void printer(const std::vector<std::vector<Curve>>& curve, double t) {
+void printer(const std::vector<std::vector<Curve>>& curve, float t) {
     for (size_t depth = 0; depth < curve.size(); ++depth) {
         std::cout << "Depth " << depth << ":\n";
 
@@ -44,6 +44,27 @@ void printer(const std::vector<std::vector<Curve>>& curve, double t) {
     }
 }
 // end of AI generated code
+
+void renderTSegment(const std::vector<std::vector<Curve>>& curve, float t, float increment) {
+    for (size_t depth = 0; depth < curve.size(); ++depth) {
+        for (size_t i = 0; i < curve[depth].size(); ++i) {
+            Point p0 = curve[depth][i](t);
+            Point p1 = curve[depth][i](t+increment);
+            if(depth==curve.size()-1){
+                DrawLineV({.x=p0.x,.y=p0.y}, {.x=p1.x,.y=p1.y}, PINK);
+            }
+        }
+    }
+}
+
+void renderPoint(const std::vector<std::vector<Curve>>& curve, float t) {
+    for (size_t depth = 0; depth < curve.size(); ++depth) {
+        for (size_t i = 0; i < curve[depth].size(); ++i) {
+            Point p0 = curve[depth][i](t);
+                DrawCircleV({.x=p0.x,.y=p0.y},7.5f ,MAGENTA);
+        }
+    }
+}
 
 void print(std::string inputed){
     std::cout << inputed << std::endl;
@@ -89,36 +110,41 @@ void movePoint(std::vector<std::vector<Curve>>& vec, int index, const Point& p){
 
 
 int main(){
-    Point p1 = {
-        .x = 0, .y=0,
-    };
-    Point p2 = {
-        .x = 0, .y=8,
-    };
-
-    Point p3 = {
-        .x = 5, .y=1,
-    };
-    Point p4 = {
-        .x = 9, .y=9,
-    };
-    Point p5 = {
-        .x = 5, .y=2.1,
-    };
-    Point p6 = {
-        .x = 8, .y=0,
-    };
 
     std::vector<std::vector<Curve>> curve;
-    insertPoint(curve,p1);
-    insertPoint(curve,p2);
-    insertPoint(curve,p3);
-    insertPoint(curve,p4);
-    movePoint(curve, 2, p5);
-    printer(curve,0.5);
-    movePoint(curve, 2, p3);
-    printer(curve,0.5);
-    movePoint(curve, 0, p6);
-    printer(curve,1);
+    Vector2 mousepos;
+    int divider = 10;
+
+    InitWindow(800, 800,"Bezier Curve");
+    SetTargetFPS(60);
+
+    while(!WindowShouldClose()){
+        if(IsMouseButtonPressed(MOUSE_RIGHT_BUTTON)){
+            mousepos = GetMousePosition();
+            Point p = {
+                .x =mousepos.x,
+                .y = mousepos.y
+            };
+            insertPoint(curve, p);
+        }
+
+        if(IsKeyDown(KEY_UP)){
+            divider += 1;
+        }
+        if(IsKeyDown(KEY_DOWN)){
+            if(divider>1)divider -= 1;
+        }
+
+        BeginDrawing();
+        ClearBackground(WHITE);
+        renderPoint(curve, 0);
+        for (int i=0;i<divider;i++){
+           float tval = (float)i/divider;
+           renderTSegment(curve, tval, 1.0f/divider);
+        }
+        EndDrawing();
+    }
+
+    CloseWindow();
     return 0;
 }
