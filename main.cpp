@@ -5,6 +5,7 @@
 #include "functional"
 #include "raylib.h"
 #include "string"
+#include "chrono"
 
 typedef struct Point {
     float x;
@@ -82,6 +83,7 @@ void print(std::string inputed){
 }
 
 void insertPoint(std::vector<std::vector<Curve>>& vec, const Point& p) {
+    auto start = std::chrono::high_resolution_clock::now();
     int depth = vec.size();
     Curve current = constant(p);
     int length = 0;
@@ -92,19 +94,26 @@ void insertPoint(std::vector<std::vector<Curve>>& vec, const Point& p) {
             current = nextlevel;
     }
     vec.push_back({current});
+    auto end = std::chrono::high_resolution_clock::now();
+    auto elapsed = std::chrono::duration<double, std::milli>(end - start);
+    std::cout << "Execution time: " << elapsed.count() << " ms\n";
 }
 
 void movePoint(std::vector<std::vector<Curve>>& vec, int index, const Point& p){
+    auto start = std::chrono::high_resolution_clock::now();
     int depth = vec.size();
-    if(index>=depth) return;
+    if(index >= depth) return;
     vec[0][index] = constant(p);
-    for(int i=0;i<depth;i++){
-        for(int j=index-i-1;j<index+1; j++){
-            if(j>=0 && j<depth-i-1){
-                vec[i+1][j] = interpolate(vec[i][j], vec[i][j+1]);
+    for(int i = 0; i < depth; i++){
+        for(int j = index - i - 1; j < index + 1; j++){
+            if(j >= 0 && j < depth - i - 1){
+                vec[i + 1][j] = interpolate(vec[i][j], vec[i][j + 1]);
             }
         }
     }
+    auto end = std::chrono::high_resolution_clock::now();
+    auto elapsed = std::chrono::duration<double, std::milli>(end - start);
+    std::cout << "Execution time: " << elapsed.count() << " ms\n";
 }
 
 
@@ -123,7 +132,7 @@ int main(){
     std::vector<std::vector<Curve>> curve;
 
     Vector2 mousepos;
-    int divider = 6;
+    int divider = 250;
     int clickedIndex =-1;
     int screenWidth = 1280;
     int screenHeight = 720;
