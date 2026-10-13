@@ -61,7 +61,7 @@ void renderTSegment(const std::vector<std::vector<Curve>>& curve, float t, float
                 );
             }
             else{
-                DrawCircleV({.x=p0.x,.y=p0.y}, 0.75f ,Color{166, 218, 149,255});
+                DrawCircleV({.x=p0.x,.y=p0.y}, 0.75f ,Color{54, 58, 79,255});
             }
         }
     }
