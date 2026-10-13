@@ -3,6 +3,7 @@
 #include <string>
 #include <vector>
 #include "functional"
+// #include "raylib.h""
 
 typedef struct Point {
     double x;
@@ -48,7 +49,7 @@ void print(std::string inputed){
     std::cout << inputed << std::endl;
 }
 
-void inserter(std::vector<std::vector<Curve>>& vec, const Point& p) {
+void insertPoint(std::vector<std::vector<Curve>>& vec, const Point& p) {
     int depth = vec.size();
     Curve current = constant(p);
     int length = 0;
@@ -60,6 +61,30 @@ void inserter(std::vector<std::vector<Curve>>& vec, const Point& p) {
     }
     vec.push_back({current});
 }
+
+void movePoint(std::vector<std::vector<Curve>>& vec, int index, const Point& p){
+    int depth = vec.size();
+    if(index>=depth) return;
+    vec[0][index] = constant(p);
+    for(int i=0;i<depth;i++){
+        for(int j=index-i-1;j<index+1; j++){
+            if(j>=0 && j<depth-i-1){
+                vec[i+1][j] = interpolate(vec[i][j], vec[i][j+1]);
+            }
+        }
+    }
+}
+
+// void testIteratePoint(int depth,int index){
+//     for(int i=0;i<depth;i++){
+//         for(int j=index-i-1;j<index+1; j++){
+//             if(j>=0 && j<depth-i-1){
+//                 std::cout << j << " " ;
+//             }
+//         }
+//         std::cout << std::endl;
+//     }
+// }
 
 
 
@@ -77,19 +102,23 @@ int main(){
     Point p4 = {
         .x = 9, .y=9,
     };
-
+    Point p5 = {
+        .x = 5, .y=2.1,
+    };
+    Point p6 = {
+        .x = 8, .y=0,
+    };
 
     std::vector<std::vector<Curve>> curve;
-    inserter(curve,p1);
-    inserter(curve,p2);
-    inserter(curve,p3);
-    inserter(curve,p4);
-    double divider = 1000;
-    double div = 0;
-    for(int i=0;i<divider+1;i++){
-        div = i/divider;
-        curve.back()[0](div);
-    }
+    insertPoint(curve,p1);
+    insertPoint(curve,p2);
+    insertPoint(curve,p3);
+    insertPoint(curve,p4);
+    movePoint(curve, 2, p5);
     printer(curve,0.5);
+    movePoint(curve, 2, p3);
+    printer(curve,0.5);
+    movePoint(curve, 0, p6);
+    printer(curve,1);
     return 0;
 }
