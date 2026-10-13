@@ -29,6 +29,7 @@ Curve constant(Point p) {
     };
 }
 
+// AI GENERATED
 void printer(const std::vector<std::vector<Curve>>& curve, double t) {
     for (size_t depth = 0; depth < curve.size(); ++depth) {
         std::cout << "Depth " << depth << ":\n";
@@ -41,6 +42,8 @@ void printer(const std::vector<std::vector<Curve>>& curve, double t) {
         }
     }
 }
+// end of AI generated code
+
 void print(std::string inputed){
     std::cout << inputed << std::endl;
 }
@@ -80,6 +83,13 @@ int main(){
     inserter(curve,p1);
     inserter(curve,p2);
     inserter(curve,p3);
+    inserter(curve,p4);
+    double divider = 1000;
+    double div = 0;
+    for(int i=0;i<divider+1;i++){
+        div = i/divider;
+        curve.back()[0](div);
+    }
     printer(curve,0.5);
     return 0;
 }
