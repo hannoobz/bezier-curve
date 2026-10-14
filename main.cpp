@@ -6,6 +6,7 @@
 #include "raylib.h"
 #include "string"
 #include "chrono"
+#include <random>
 
 typedef struct Point {
     float x;
@@ -130,12 +131,13 @@ void deleteLast(std::vector<std::vector<Curve>>& vec){
 
 int main(){
     std::vector<std::vector<Curve>> curve;
-
+    bool dirty = false;
     Vector2 mousepos;
-    int divider = 250;
+    int divider = 66;
     int clickedIndex =-1;
     int screenWidth = 1280;
     int screenHeight = 720;
+    bool firstLoad = true;
 
     SetConfigFlags(FLAG_WINDOW_RESIZABLE);
     InitWindow(screenWidth, screenHeight, "Bézier Curve");
@@ -149,6 +151,7 @@ int main(){
                 .y = mousepos.y
             };
             insertPoint(curve, p);
+            dirty = true;
         }
 
         if(IsMouseButtonDown(MOUSE_LEFT_BUTTON)){
@@ -169,44 +172,48 @@ int main(){
             if(clickedIndex!=-1){
                 movePoint(curve, clickedIndex, {.x=mousepos.x,.y=mousepos.y});
             }
+            dirty = true;
         }
         if(IsMouseButtonUp(MOUSE_LEFT_BUTTON)){
             clickedIndex=-1;
         }
 
-        if(IsKeyDown(KEY_UP)){
-            divider += 1;
+        if(IsKeyPressed(KEY_UP)){
+            divider++;
+            dirty = true;
         }
-        if(IsKeyDown(KEY_DOWN)){
-            if(divider>1)divider -= 1;
+        if(IsKeyPressed(KEY_DOWN)){
+            divider--;
+            dirty = true;
         }
         if(IsKeyPressed(KEY_C)){
             curve = {};
+            dirty = true;
         }
         if(IsKeyPressed(KEY_U)){
             deleteLast(curve);
+            dirty = true;
         }
 
-
-        bool firstLoad = true;
         BeginDrawing();
-        if(clickedIndex!=-1 || IsMouseButtonPressed(MOUSE_RIGHT_BUTTON) || firstLoad){
-        firstLoad = false;
-        ClearBackground({24, 25, 38});
-        for (int x = 0; x <= GetScreenWidth(); x += 10)
-        {
-            DrawLine(x, 0, x, GetScreenHeight(), Color{30, 32, 48,255});
-        }
+        if(dirty || firstLoad){
+            dirty = false;
+            firstLoad = false;
+            ClearBackground({24, 25, 38});
+            for (int x = 0; x <= GetScreenWidth(); x += 10)
+            {
+                DrawLine(x, 0, x, GetScreenHeight(), Color{30, 32, 48,255});
+            }
 
-        for (int y = 0; y <= GetScreenHeight(); y += 10)
-        {
-            DrawLine(0, y, GetScreenWidth(), y,  Color{30, 32, 48,255});
-        }
-        renderPoint(curve, 0);
-        for (int i=0;i<divider;i++){
-           float tval = (float)i/divider;
-           renderTSegment(curve, tval, 1.0f/divider);
-        }
+            for (int y = 0; y <= GetScreenHeight(); y += 10)
+            {
+                DrawLine(0, y, GetScreenWidth(), y,  Color{30, 32, 48,255});
+            }
+            renderPoint(curve, 0);
+            for (int i=0;i<divider;i++){
+               float tval = (float)i/divider;
+               renderTSegment(curve, tval, 1.0f/divider);
+            }
         }
         EndDrawing();
     }
