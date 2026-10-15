@@ -6,7 +6,10 @@
 #include "raylib.h"
 #include "string"
 #include "chrono"
-#include <random>
+#include <memory>
+#include <cmath>
+#include <utility>
+
 
 typedef struct Point {
     float x;
@@ -15,15 +18,24 @@ typedef struct Point {
 
 using Curve = std::function<Point(float)>;
 
-Curve interpolate(Curve a, Curve b) {
-    return [a, b](float t) {
-        Point p1 = a(t);
-        Point p2 = b(t);
 
-        return Point{
+Curve interpolate(Curve a, Curve b) {
+    auto A = std::make_shared<Curve>(std::move(a));
+    auto B = std::make_shared<Curve>(std::move(b));
+
+    auto cache = std::make_shared<std::pair<float, Point>>(NAN, Point{});
+
+    return [A, B, cache](float t) {
+        if (t == cache->first) return cache->second;
+
+        Point p1 = (*A)(t);
+        Point p2 = (*B)(t);
+        cache->second = Point{
             .x = p1.x + t * (p2.x - p1.x),
             .y = p1.y + t * (p2.y - p1.y),
         };
+        cache->first = t;
+        return cache->second;
     };
 }
 
