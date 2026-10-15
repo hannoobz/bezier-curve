@@ -60,7 +60,7 @@ void printer(const std::vector<std::vector<Curve>>& curve, float t) {
 }
 // end of AI generated code
 
-void renderTSegment(const std::vector<std::vector<Curve>>& curve, float t, float increment) {
+void renderTSegment(const std::vector<std::vector<Curve>>& curve, float t, float increment, bool drawtracer) {
     for (size_t depth = 0; depth < curve.size(); ++depth) {
         for (size_t i = 0; i < curve[depth].size(); ++i) {
             Point p0 = curve[depth][i](t);
@@ -74,7 +74,7 @@ void renderTSegment(const std::vector<std::vector<Curve>>& curve, float t, float
                 );
             }
             else{
-                DrawCircleV({.x=p0.x,.y=p0.y}, 0.75f ,Color{54, 58, 79,255});
+                if(drawtracer) DrawCircleV({.x=p0.x,.y=p0.y}, 0.75f ,Color{54, 58, 79,255});
             }
         }
     }
@@ -142,7 +142,9 @@ void deleteLast(std::vector<std::vector<Curve>>& vec){
 
 
 int main(){
-    std::vector<std::vector<Curve>> curve;
+    auto curves = std::vector<std::vector<std::vector<Curve>>>(10);
+    std::vector<std::vector<Curve>>* curve = &curves[1];
+    int curveSelector = 1;
     bool dirty = false;
     Vector2 mousepos;
     int divider = 66;
@@ -150,19 +152,30 @@ int main(){
     int screenWidth = 1280;
     int screenHeight = 720;
     bool firstLoad = true;
+    bool drawTrace = true;
+    bool drawCtrlPoint = true;
+    bool drawAllCtrlPoint = false;
 
     SetConfigFlags(FLAG_WINDOW_RESIZABLE);
     InitWindow(screenWidth, screenHeight, "Bézier Curve");
     SetTargetFPS(60);
 
     while(!WindowShouldClose()){
+        if(screenHeight!=GetScreenHeight()){
+            dirty = true;
+            screenHeight = GetScreenHeight();
+        }
+        if(screenWidth!=GetScreenWidth()){
+            dirty = true;
+            screenWidth = GetScreenWidth();
+        }
         if(IsMouseButtonPressed(MOUSE_RIGHT_BUTTON)){
             mousepos = GetMousePosition();
             Point p = {
                 .x =mousepos.x,
                 .y = mousepos.y
             };
-            insertPoint(curve, p);
+            insertPoint(*curve, p);
             dirty = true;
         }
 
@@ -170,10 +183,10 @@ int main(){
             mousepos =  GetMousePosition();
             float xpos;
             float ypos;
-            if(!curve.empty() && clickedIndex==-1){
+            if(!curve->empty() && clickedIndex==-1){
                 for(int i=0;i<curve[0].size();i++){
-                    xpos = curve[0][i](0).x;
-                    ypos = curve[0][i](0).y;
+                    xpos = (*curve)[0][i](0).x;
+                    ypos = (*curve)[0][i](0).y;
                     bool isInside = CheckCollisionPointCircle(mousepos, {.x=xpos,.y=ypos}, 10.0f);
                     if(isInside){
                         clickedIndex = i;
@@ -182,7 +195,7 @@ int main(){
                 }
             }
             if(clickedIndex!=-1){
-                movePoint(curve, clickedIndex, {.x=mousepos.x,.y=mousepos.y});
+                movePoint(*curve, clickedIndex, {.x=mousepos.x,.y=mousepos.y});
             }
             dirty = true;
         }
@@ -190,20 +203,43 @@ int main(){
             clickedIndex=-1;
         }
 
-        if(IsKeyPressed(KEY_UP)){
+        for (int i=48;i<58;i++){
+            if(IsKeyPressed(i)){
+                curve = &curves[i-48];
+                dirty = true;
+            }
+        }
+
+
+        if(IsKeyDown(KEY_UP)){
             divider++;
             dirty = true;
         }
-        if(IsKeyPressed(KEY_DOWN)){
+        if(IsKeyDown(KEY_DOWN)){
             divider--;
             dirty = true;
         }
         if(IsKeyPressed(KEY_C)){
-            curve = {};
+            *curve = {};
             dirty = true;
         }
         if(IsKeyPressed(KEY_U)){
-            deleteLast(curve);
+            deleteLast(*curve);
+            dirty = true;
+        }
+
+        if (IsKeyPressed(KEY_T)){
+            drawTrace = !drawTrace;
+            dirty = true;
+        }
+
+        if (IsKeyPressed(KEY_P)){
+            drawCtrlPoint = !drawCtrlPoint;
+            dirty = true;
+        }
+
+        if(IsKeyPressed(KEY_A)){
+            drawAllCtrlPoint = !drawAllCtrlPoint;
             dirty = true;
         }
 
@@ -221,10 +257,14 @@ int main(){
             {
                 DrawLine(0, y, GetScreenWidth(), y,  Color{30, 32, 48,255});
             }
-            renderPoint(curve, 0);
-            for (int i=0;i<divider;i++){
-               float tval = (float)i/divider;
-               renderTSegment(curve, tval, 1.0f/divider);
+            for(const auto &crv: curves){
+                if(&crv==curve || drawAllCtrlPoint){
+                    if(drawCtrlPoint) renderPoint(crv, 0);
+                }
+                for (int i=0;i<divider;i++){
+                   float tval = (float)i/divider;
+                   renderTSegment(crv, tval, 1.0f/divider,drawTrace);
+                }
             }
         }
         EndDrawing();
